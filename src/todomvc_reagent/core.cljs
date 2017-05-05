@@ -2,7 +2,7 @@
     (:require [reagent.core :as r]))
 
 (def todos
-  (r/atom [{:value "Create a TodoMVC template"} {:value "Rule the web"}]))
+  (r/atom [{:value "Taste JavaScript"} {:value "Buy a unicorn"}]))
 
 ;; -------------------------
 ;; Views
@@ -12,6 +12,15 @@
    [:h1 title]
    [:input.new-todo
     {:autofocus true, :placeholder placeholder}]])
+
+(defn todo-list [todos]
+  (for [todo todos]
+    [:li
+     [:div.view
+      [:input.toggle {:type "checkbox"}]
+      [:label (:value todo)]
+      [:button.destroy]
+      [:input.edit {:value ""}]]]))
 
 (defn home-page []
   (fn []
@@ -24,18 +33,7 @@
        [:label {:for "toggle-all"} "Mark all as complte"]
        
        [:ul.todo-list
-        [:li.completed
-         [:div.view
-          [:input.toggle {:type "checkbox" :checked "checked"}]
-          [:label "Taste JavaScript"]
-          [:button.destroy]
-          [:input.edit {:value "Create a TodoMVC template"}]]]
-        [:li
-         [:div.view
-          [:input.toggle {:type "checkbox"}]
-          [:label "Buy a unicorn"]
-          [:button.destroy]
-          [:input.edit {:value "Rule the web"}]]]
+        (todo-list @todos)
         ]]
       
       [:footer.footer
