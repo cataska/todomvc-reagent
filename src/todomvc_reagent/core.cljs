@@ -17,24 +17,40 @@
    (let [id (swap! counter inc)]
      (swap! todos assoc id {:id id :title title :done done}))))
 
-(add-todo "Taste JavaScript" true)
-(add-todo "Buy a unicorn")
+(defn init []
+  (add-todo "Taste JavaScript" true)
+  (add-todo "Buy a unicorn"))
+
+(init)
 
 ;; -------------------------
 ;; Helper
+
 (defn toggle [id]
   (swap! todos update-in [id :done] not))
 (defn delete [id]
   (swap! todos dissoc id))
+(defn save [title]
+  (when (not-empty title) (add-todo title)))
 
 ;; -------------------------
 ;; Views
 
 (defn todo-header [title placeholder]
-  [:header.header
-   [:h1 title]
-   [:input.new-todo
-    {:autofocus true, :placeholder placeholder}]])
+  (let [val (r/atom "")
+        stop #(reset! val "")]
+    (fn []
+      [:header.header
+       [:h1 title]
+       [:input.new-todo
+        {:value @val
+         :autoFocus true
+         :placeholder placeholder
+         :on-change #(reset! val (-> % .-target .-value))
+         :on-key-down #(case (.-which %)
+                         13 (do (save @val) (stop))
+                         27 (stop)
+                         nil)}]])))
 
 (defn todo-item [todo]
     (fn [{:keys [id title done]}]
