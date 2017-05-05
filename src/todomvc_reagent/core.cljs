@@ -32,6 +32,11 @@
   (swap! todos dissoc id))
 (defn save [title]
   (when (not-empty title) (add-todo title)))
+(defn clear-done []
+  (reset! todos (->> (vals @todos)
+                     (filter :done)
+                     (map :id)
+                     (reduce dissoc @todos))))
 
 ;; -------------------------
 ;; Views
@@ -61,49 +66,58 @@
         [:button.destroy {:on-click #(delete id)}]
         [:input.edit {:value ""}]]]))
 
-(defn todo-list [todos]
+(defn todo-list [showing todos]
   [:ul.todo-list
-   (for [todo todos]
+   (for [todo (filter (case @showing
+                        :all identity
+                        :active (complement :done)
+                        :completed :done)
+                      todos)]
      ^{:key (:id todo)} [todo-item todo])])
 
-(defn todo-footer [count]
-  (when (> count 0)
-    [:footer.footer
-     [:span.todo-count [:strong (str count)] " item left"]
-     [:ul.filters
-      [:li [:a.selected {:href "#/"} "All"]]
-      [:li [:a {:href "#/active"} "Active"]]
-      [:li [:a {:href "#/completed"} "Completed"]]]
-     [:button.clear-completed "Clear completed"]]))
+(defn todo-footer [showing count]
+  (let [a-fn (fn [kw url txt]
+               [:a {:class (when (= kw @showing) "selected")
+                    :href url
+                    :on-click #(reset! showing kw)}
+                txt])]
+   (when (> count 0)
+     [:footer.footer
+      [:span.todo-count [:strong (str count)] " item left"]
+      [:ul.filters
+       [:li (a-fn :all "#/" "All")]
+       [:li (a-fn :active "#/active" "Active")]
+       [:li (a-fn :completed "#/completed" "Completed")]]
+      [:button.clear-completed {:on-click #(clear-done)} "Clear completed"]])))
 
 (defn home-page []
-  (fn []
-    [:div
-     [:section.todoapp
-      [todo-header "reagent" "What needs to be done?"]
+  (let [showing (r/atom :all)]
+   (fn []
+     (let [items (vals @todos)]
+      [:div
+       [:section.todoapp
+        [todo-header "reagent" "What needs to be done?"]
 
-      [:section.main
-       [:input.toggle-all {:type "checkbox"}]
-       [:label {:for "toggle-all"} "Mark all as complte"]
+        [:section.main
+         [:input.toggle-all {:type "checkbox"}]
+         [:label {:for "toggle-all"} "Mark all as complte"]
 
-       [todo-list (vals @todos)]]
+         [todo-list showing items]]
       
-      [todo-footer (count @todos)]
-      ]
+        [todo-footer showing (count items)]
+        ]
      
-     [:footer.info
-      [:p "Double-click to edit a todo"]
-      [:p "Template by "
-       [:a {:href "http://sindresorhus.com"}]
-       "http://sindresorhus.com"]
-      [:p "Created by "
-       [:a {:href "http://todomvc.com"}]
-       "you"]
-      [:p "Part of  "
-       [:a {:href "http://todomvc.com"}]
-       "TodoMVC"]]
-     ])
-  )
+       [:footer.info
+        [:p "Double-click to edit a todo"]
+        [:p "Template by "
+         [:a {:href "http://sindresorhus.com"}]
+         "http://sindresorhus.com"]
+        [:p "Created by "
+         [:a {:href "http://todomvc.com"}]
+         "you"]
+        [:p "Part of  "
+         [:a {:href "http://todomvc.com"}]
+         "TodoMVC"]]]))))
 
 ;; -------------------------
 ;; Initialize app
