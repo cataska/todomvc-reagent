@@ -1,17 +1,23 @@
 (ns todomvc-reagent.core
-    (:require [reagent.core :as reagent]))
+    (:require [reagent.core :as r]))
+
+(def todos
+  (r/atom [{:value "Create a TodoMVC template"} {:value "Rule the web"}]))
 
 ;; -------------------------
 ;; Views
+
+(defn todo-header [title placeholder]
+  [:header.header
+   [:h1 title]
+   [:input.new-todo
+    {:autofocus true, :placeholder placeholder}]])
 
 (defn home-page []
   (fn []
     [:div
      [:section.todoapp
-      [:header.header
-       [:h1 "todos"]
-       [:input.new-todo
-        {:autofocus true, :placeholder "What needs to be done?"}]]
+      [todo-header "reagent" "What needs to be done?"]
 
       [:section.main
        [:input.toggle-all {:type "checkbox"}]
@@ -58,7 +64,7 @@
 ;; Initialize app
 
 (defn mount-root []
-  (reagent/render [home-page] (.getElementById js/document "app")))
+  (r/render [home-page] (.getElementById js/document "app")))
 
 (defn init! []
   (mount-root))
