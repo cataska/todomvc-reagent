@@ -1,8 +1,31 @@
 (ns todomvc-reagent.core
     (:require [reagent.core :as r]))
 
+;; -------------------------
+;; Db
+
 (def todos
-  (r/atom [{:value "Taste JavaScript"} {:value "Buy a unicorn"}]))
+  (r/atom (sorted-map)))
+
+(def counter
+  (r/atom 0))
+
+(defn add-todo
+  ([title]
+   (add-todo title false))
+  ([title done]
+   (let [id (swap! counter inc)]
+     (swap! todos assoc id {:id id :title title :done done}))))
+
+(add-todo "Taste JavaScript" true)
+(add-todo "Buy a unicorn")
+
+;; -------------------------
+;; Helper
+(defn toggle [id]
+  (swap! todos update-in [id :done] not))
+(defn delete [id]
+  (swap! todos dissoc id))
 
 ;; -------------------------
 ;; Views
@@ -13,14 +36,29 @@
    [:input.new-todo
     {:autofocus true, :placeholder placeholder}]])
 
+(defn todo-item [todo]
+    (fn [{:keys [id title done]}]
+      [:li {:class (if done "completed" "")}
+       [:div.view
+        [:input.toggle {:type "checkbox" :checked done :on-change #(toggle id)}]
+        [:label title]
+        [:button.destroy {:on-click #(delete id)}]
+        [:input.edit {:value ""}]]]))
+
 (defn todo-list [todos]
-  (for [todo todos]
-    [:li
-     [:div.view
-      [:input.toggle {:type "checkbox"}]
-      [:label (:value todo)]
-      [:button.destroy]
-      [:input.edit {:value ""}]]]))
+  [:ul.todo-list
+   (for [todo todos]
+     ^{:key (:id todo)} [todo-item todo])])
+
+(defn todo-footer [count]
+  (when (> count 0)
+    [:footer.footer
+     [:span.todo-count [:strong (str count)] " item left"]
+     [:ul.filters
+      [:li [:a.selected {:href "#/"} "All"]]
+      [:li [:a {:href "#/active"} "Active"]]
+      [:li [:a {:href "#/completed"} "Completed"]]]
+     [:button.clear-completed "Clear completed"]]))
 
 (defn home-page []
   (fn []
@@ -31,18 +69,11 @@
       [:section.main
        [:input.toggle-all {:type "checkbox"}]
        [:label {:for "toggle-all"} "Mark all as complte"]
-       
-       [:ul.todo-list
-        (todo-list @todos)
-        ]]
+
+       [todo-list (vals @todos)]]
       
-      [:footer.footer
-       [:span.todo-count [:strong "0"] " item left"]
-       [:ul.filters
-        [:li [:a.selected {:href "#/"} "All"]]
-        [:li [:a {:href "#/active"} "Active"]]
-        [:li [:a {:href "#/completed"} "Completed"]]]
-       [:button.clear-completed "Clear completed"]]]
+      [todo-footer (count @todos)]
+      ]
      
      [:footer.info
       [:p "Double-click to edit a todo"]
