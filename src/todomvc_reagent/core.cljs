@@ -96,9 +96,10 @@
                [:a {:class (when (= kw @showing) "selected")
                     :href url
                     :on-click #(reset! showing kw)}
-                txt])]
+                txt])
+        active-cnt (- count completed-cnt)]
    [:footer.footer
-    [:span.todo-count [:strong (str count)] " item left"]
+    [:span.todo-count [:strong (str active-cnt)] (str (if (> active-cnt 1) " items" " item") " left")]
     [:ul.filters
      [:li (a-fn :all "#/" "All")]
      [:li (a-fn :active "#/active" "Active")]
