@@ -3,6 +3,12 @@
             [clojure.string :as s]))
 
 ;; -------------------------
+;; Constants
+
+(def KEY_ENTER 13)
+(def KEY_ESCAPE 27)
+
+;; -------------------------
 ;; Db
 
 (def todos
@@ -62,10 +68,16 @@
         :placeholder placeholder
         :on-blur save
         :on-change #(reset! val (-> % .-target .-value))
-        :on-key-down #(case (.-which %)
-                        13 (save)
-                        27 (stop)
-                        nil)}])))
+        :on-key-down #(cond
+                        (= (.-which %) KEY_ENTER) (save)
+                        (= (.-which %) KEY_ESCAPE) (stop)
+                        :else nil)}])))
+
+(defn todo-header [title placeholder]
+  [:header.header
+   [:h1 title]
+   [todo-input {:class "new-todo" :placeholder placeholder
+                :on-save add-todo}]])
 
 (defn todo-item []
   (let [editing (r/atom false)]
@@ -115,10 +127,7 @@
            active-cnt (- (count items) completed-cnt)]
       [:div
        [:section.todoapp
-        [:header.header
-         [:h1 "reagent"]
-         [todo-input {:class "new-todo" :placeholder "What needs to be done?"
-                      :on-save add-todo}]]
+        [todo-header "reagent" "What needs to be done?"]
 
         (when (pos? (count items))
           [:div
