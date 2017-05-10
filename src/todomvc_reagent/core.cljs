@@ -1,6 +1,7 @@
 (ns todomvc-reagent.core
   (:require [reagent.core :as r]
-            [clojure.string :as s]))
+            [clojure.string :as s]
+            [todomvc-reagent.session :as session]))
 
 ;; -------------------------
 ;; Constants
@@ -9,46 +10,37 @@
 (def KEY_ESCAPE 27)
 
 ;; -------------------------
-;; Db
+;; Helper
 
-(def todos
-  (r/atom (sorted-map)))
-
-(def counter
-  (r/atom 0))
+(defn toggle [id]
+  (swap! session/todos update-in [id :done] not))
+(defn delete [id]
+  (swap! session/todos dissoc id))
+(defn save
+  ([title]
+   (when (not-empty title) (add-todo title)))
+  ([id title]
+   (swap! session/todos assoc-in [id :title] title)))
+(defn clear-completed []
+  (reset! session/todos (->> (vals @session/todos)
+                             (filter :done)
+                             (map :id)
+                             (reduce dissoc @session/todos))))
+(defn complete-all [v]
+  (reset! session/todos (reduce #(assoc-in %1 [%2 :done] v) @session/todos (keys @session/todos))))
 
 (defn add-todo
   ([title]
    (add-todo title false))
   ([title done]
-   (let [id (swap! counter inc)]
-     (swap! todos assoc id {:id id :title title :done done}))))
+   (let [id (swap! session/counter inc)]
+     (swap! session/todos assoc id {:id id :title title :done done}))))
 
 (defn init []
   (add-todo "Taste JavaScript" true)
   (add-todo "Buy a unicorn"))
 
-(init)
-
-;; -------------------------
-;; Helper
-
-(defn toggle [id]
-  (swap! todos update-in [id :done] not))
-(defn delete [id]
-  (swap! todos dissoc id))
-(defn save
-  ([title]
-   (when (not-empty title) (add-todo title)))
-  ([id title]
-   (swap! todos assoc-in [id :title] title)))
-(defn clear-completed []
-  (reset! todos (->> (vals @todos)
-                     (filter :done)
-                     (map :id)
-                     (reduce dissoc @todos))))
-(defn complete-all [v]
-  (reset! todos (reduce #(assoc-in %1 [%2 :done] v) @todos (keys @todos))))
+;;(init)
 
 ;; -------------------------
 ;; Views
@@ -122,7 +114,7 @@
 (defn home-page []
   (let [showing (r/atom :all)]
    (fn []
-     (let [items (vals @todos)
+     (let [items (vals @session/todos)
            completed-cnt (->> items (filter :done) count)
            active-cnt (- (count items) completed-cnt)]
       [:div
