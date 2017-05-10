@@ -36,12 +36,6 @@
    (let [id (swap! session/counter inc)]
      (swap! session/todos assoc id {:id id :title title :done done}))))
 
-(defn init []
-  (add-todo "Taste JavaScript" true)
-  (add-todo "Buy a unicorn"))
-
-;;(init)
-
 ;; -------------------------
 ;; Views
 
