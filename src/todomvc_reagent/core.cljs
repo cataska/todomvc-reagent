@@ -12,6 +12,13 @@
 ;; -------------------------
 ;; Helper
 
+(defn add-todo
+  ([title]
+   (add-todo title false))
+  ([title done]
+   (let [id (swap! session/counter inc)]
+     (swap! session/todos assoc id {:id id :title title :done done}))))
+
 (defn toggle [id]
   (swap! session/todos update-in [id :done] not))
 (defn delete [id]
@@ -28,13 +35,6 @@
                              (reduce dissoc @session/todos))))
 (defn complete-all [v]
   (reset! session/todos (reduce #(assoc-in %1 [%2 :done] v) @session/todos (keys @session/todos))))
-
-(defn add-todo
-  ([title]
-   (add-todo title false))
-  ([title done]
-   (let [id (swap! session/counter inc)]
-     (swap! session/todos assoc id {:id id :title title :done done}))))
 
 ;; -------------------------
 ;; Views
