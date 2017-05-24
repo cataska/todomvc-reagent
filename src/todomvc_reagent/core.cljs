@@ -1,7 +1,8 @@
 (ns todomvc-reagent.core
   (:require [reagent.core :as r]
             [clojure.string :as s]
-            [todomvc-reagent.session :as session]))
+            [todomvc-reagent.session :as session]
+            [todomvc-reagent.routes :as routes]))
 
 ;; -------------------------
 ;; Constants
@@ -80,20 +81,19 @@
                       :on-save #(save id %)
                       :on-stop #(reset! editing false)}])])))
 
-(defn todo-list [showing todos]
+(defn todo-list [todos]
   [:ul.todo-list
-   (for [todo (filter (case @showing
+   (for [todo (filter (case @session/display-type
                         :all identity
                         :active (complement :done)
                         :completed :done)
                       todos)]
      ^{:key (:id todo)} [todo-item todo])])
 
-(defn todo-footer [showing completed-cnt count]
+(defn todo-footer [completed-cnt count]
   (let [a-fn (fn [kw url txt]
-               [:a {:class (when (= kw @showing) "selected")
-                    :href url
-                    :on-click #(reset! showing kw)}
+               [:a {:class (when (= kw @session/display-type) "selected")
+                    :href url}
                 txt])
         active-cnt (- count completed-cnt)]
    [:footer.footer
@@ -106,7 +106,6 @@
       [:button.clear-completed {:on-click #(clear-completed)} "Clear completed"])]))
 
 (defn home-page []
-  (let [showing (r/atom :all)]
    (fn []
      (let [items (vals @session/todos)
            completed-cnt (->> items (filter :done) count)
@@ -123,10 +122,9 @@
                                 :on-click #(complete-all (pos? active-cnt))}]
             [:label {:for "toggle-all"} "Mark all as complte"]
 
-            [todo-list showing items]]
+            [todo-list items]]
 
-           [todo-footer showing completed-cnt (count items)]])
-        ]
+           [todo-footer completed-cnt (count items)]])]
      
        [:footer.info
         [:p "Double-click to edit a todo"]
@@ -138,7 +136,7 @@
          "you"]
         [:p "Part of  "
          [:a {:href "http://todomvc.com"}]
-         "TodoMVC"]]]))))
+         "TodoMVC"]]])))
 
 ;; -------------------------
 ;; Initialize app
@@ -147,4 +145,5 @@
   (r/render [home-page] (.getElementById js/document "app")))
 
 (defn init! []
+  (routes/hook-browser-navigation!)
   (mount-root))

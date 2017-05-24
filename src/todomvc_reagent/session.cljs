@@ -11,3 +11,4 @@
 (def counter
   (local-storage (r/atom 0) :counter))
 
+(def display-type (r/atom :all))
